@@ -4,6 +4,8 @@ import { Input } from "./components/ui/input";
 import { Button } from "./components/ui/button";
 import * as XLSX from "xlsx";
 import { List, CreditCard, ClipboardList } from "lucide-react";
+import Vendas from "./components/Vendas"; // ajuste o caminho conforme sua pasta
+
 
 export default function LojaApp() {
   const [abaAtiva, setAbaAtiva] = useState("vendas");
