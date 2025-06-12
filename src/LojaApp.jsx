@@ -5,6 +5,8 @@ import { Button } from "./components/ui/button";
 import * as XLSX from "xlsx";
 import { List, CreditCard, ClipboardList } from "lucide-react";
 import Vendas from "./components/Vendas"; // ajuste o caminho conforme sua pasta
+import { NumericFormat } from "react-number-format"; // ✅ correto
+
 
 
 export default function LojaApp() {
@@ -12,6 +14,7 @@ export default function LojaApp() {
   const [quantidades, setQuantidades] = useState({});
   const [quantidadesProducao, setQuantidadesProducao] = useState({});
   const [dataAtual, setDataAtual] = useState("");
+  const [detalhesAbertos, setDetalhesAbertos] = useState({});  
   const [caixa, setCaixa] = useState({
     dinheiro: "",
     pixInter: "",
@@ -25,8 +28,8 @@ export default function LojaApp() {
     "Açaí&Sorvete 500ml", "Açaí&Sorvete 700ml", "Açaí&Sorvete 300ml IFOOD", "Açaí&Sorvete 500ml IFOOD",
     "Açaí&Sorvete 700ml IFOOD", "Empadão", "Empadão CARNE SECA/ outros", "Pão de Queijo", "Torta Salgada",
     "Sanduíche Natural", "Coca/Refri 200ml", "Guaraviton", "Água com/sem gás 500ml", "Tortinha/bolo de pote",
-    "Palha Italiana", "Pudim Copo", "Arroz doce Copo", "Creme de Avelã", "Adicional", "Picole - R$2,00",
-    "Picolé  - R$3,00", "Picolé  - R$4,00", "Paleta  - R$6,00", "Pudim Forma", "Torta /Empadão grande",
+    "Palha Italiana", "Pudim Copo", "Arroz doce Copo", "Creme de Avelã", "Adicional", "Picole 2",
+    "Picolé 3", "Picolé 4", "Paleta ", "Pudim Forma", "Torta /Empadão grande",
     "Bolo de travessa", "Rabanada Recheada", "Rabanada Tradicional", "Salgado"
   ];
 
@@ -34,7 +37,7 @@ export default function LojaApp() {
     "EMPADÃO DE FRANGO", "EMPADÃO DE CARNE SECA", "EMPADÃO DE CALABRESA", "EMPADÃO DE COSTELA",
     "EMPADÃO DE FORMA GRANDE", "GELADÃO DE NINHO C/ NUTELLA", "GELADÃO DE NINHO C/ MORANGO",
     "GELADÃO DE MORANGO C/ NUTELLA", "GELADÃO DE AMENDOIN", "GELADÃO DE COCO", "GELADÃO DE MARACUJÁ",
-    "GELADÃO DE FINI", "GELADÃO DE CHOCOLATE", "GELADÃO DE OVOMALTINE", "GELADÃO DE ABACAXI", "GELADÃO DE LIMÃO"
+    "GELADÃO DE FINI", "GELADÃO DE CHOCOLATE", "GELADÃO DE OVOMALTINE", "GELADÃO DE ABACAXI", "GELADÃO DE LIMÃO","PALHA ITALIANA","BOLO DE POTE", "ARROZ DOCE"  
   ];
 
   useEffect(() => {
@@ -47,12 +50,16 @@ export default function LojaApp() {
     setQuantidadesProducao(inicialProducao);
 
     const hoje = new Date();
-    const diasSemana = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
-    const diaSemana = diasSemana[hoje.getDay()];
     const dia = String(hoje.getDate()).padStart(2, '0');
     const mes = String(hoje.getMonth() + 1).padStart(2, '0');
     const ano = hoje.getFullYear();
-    setDataAtual(`${diaSemana}, ${dia}/${mes}/${ano}`);
+
+    const diasSemana = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+    const diaSemana = diasSemana[hoje.getDay()];
+
+    const dataAtual = `${diaSemana}, ${dia}/${mes}/${ano}`;
+
+    setDataAtual(dataAtual);
   }, []);
 
   const formatarMoeda = (valor) => {
@@ -65,6 +72,296 @@ export default function LojaApp() {
   };
 
   const totalCaixa = Object.values(caixa).reduce((total, val) => total + (parseFloat(val) || 0), 0);
+
+  const salvarFechamento = () => {
+    const hoje = new Date();
+    const diasSemana = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+    const diaSemana = diasSemana[hoje.getDay()];
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const ano = hoje.getFullYear();
+    const dataFormatada = `${dia}/${mes}/${ano}`;
+
+    const total =
+      Number(caixa.dinheiro || 0) +
+      Number(caixa.pixInter || 0) +
+      Number(caixa.cartaoPagBank || 0) +
+      Number(caixa.pixSantander || 0) +
+      Number(caixa.cartaoSantander || 0);
+
+    const novoFechamento = {
+      data: dataFormatada,
+      diaSemana,
+      valores: { ...caixa },
+      total
+    };
+
+    const fechamentosSalvos = JSON.parse(localStorage.getItem("fechamentos") || "[]");
+    const atualizados = [...fechamentosSalvos, novoFechamento];
+    localStorage.setItem("fechamentos", JSON.stringify(atualizados));
+    alert("Fechamento salvo com sucesso! ✅");
+  };
+
+  const exportarTodosFechamentos = () => {
+    const fechamentos = JSON.parse(localStorage.getItem("fechamentos") || "[]");
+    if (!fechamentos.length) {
+      alert("Nenhum fechamento para exportar.");
+      return;
+    }
+    const dados = fechamentos.map(f => ({
+      Data: f.diaSemana ? `${f.diaSemana} – ${f.data}` : f.data,
+      Dinheiro: f.valores.dinheiro,
+      "PIX Inter": f.valores.pixInter,
+      "Cartão PagBank": f.valores.cartaoPagBank,
+      "PIX Santander": f.valores.pixSantander,
+      "Cartão Santander": f.valores.cartaoSantander,
+      Total: f.total
+    }));
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Fechamentos");
+    XLSX.writeFile(wb, "fechamentos-loja.xlsx");
+  };
+
+  const exportarFechamentoIndividual = (fechamento) => {
+    const dadosPlanilha = [{
+      "Dia da Semana": fechamento.diaSemana || "",
+      "Data": fechamento.data || "",
+      "Dinheiro (R$)": fechamento.valores.dinheiro,
+      "PIX Inter (R$)": fechamento.valores.pixInter,
+      "Cartão PagBank (R$)": fechamento.valores.cartaoPagBank,
+      "PIX Santander (R$)": fechamento.valores.pixSantander,
+      "Cartão Santander (R$)": fechamento.valores.cartaoSantander,
+      "Total (R$)": fechamento.total
+    }];
+
+    const worksheet = XLSX.utils.json_to_sheet(dadosPlanilha);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Fechamento");
+
+    const nomeArquivo = `fechamento_${fechamento.data.replace(/\//g, "-")}.xlsx`;
+    XLSX.writeFile(workbook, nomeArquivo);
+  };
+
+  const limparFechamentos = () => {
+    const confirmar = window.confirm("Tem certeza que deseja apagar todos os fechamentos?");
+    if (confirmar) {
+      localStorage.removeItem("fechamentos");
+      alert("Todos os fechamentos foram apagados! 🧹");
+      window.location.reload(); // atualiza a tela
+    }
+  };
+
+  const precosProdutos = {
+    "Geladão": 5,
+    "Geladão IFOOD": 5,
+    "Açaí&Sorvete 200ml": 7,
+    "Açaí&Sorvete 300ml": 10,
+    "Açaí&Sorvete 400ml": 12,
+    "Açaí&Sorvete 500ml": 14,
+    "Açaí&Sorvete 700ml": 18,
+    "Açaí&Sorvete 300ml IFOOD": 10,
+    "Açaí&Sorvete 500ml IFOOD": 14,
+    "Açaí&Sorvete 700ml IFOOD": 18,
+    "Empadão": 10,
+    "Empadão CARNE SECA / outros": 15,
+    "Pão de Queijo": 5,
+    "Torta Salgada": 18,
+    "Sanduíche Natural": 8,
+    "Coca/Refri 200ml": 3,
+    "Guaraviton": 5,
+    "Água com/sem gás 500ml": 3,
+    "Tortinha / Bolo de pote": 10,
+    "Palha Italiana": 7,
+    "Pudim Copo": 7,
+    "Arroz doce Copo": 5,
+    "Creme de Avelã": 6,
+    "Adicional": 3,
+    "Picolé 2": 2,
+    "Picolé 3": 3,
+    "Picolé 4": 4,
+    "Paleta": 6,
+    "Pudim Forma": 35,
+    "Torta / Empadão grande": 90,
+    "Bolo de travessa": 90,
+    "Rabanada Recheada": 10,
+    "Rabanada Tradicional": 5,
+    "Salgado": 20
+  };
+
+  const salvarVendasNoRelatorio = () => {
+    const hoje = new Date();
+    const diasSemana = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+    const diaSemana = diasSemana[hoje.getDay()];
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const ano = hoje.getFullYear();
+    const dataFormatada = `${dia}/${mes}/${ano}`;
+
+    const vendasFiltradas = Object.entries(quantidades)
+      .filter(([produto, qtd]) => qtd > 0)
+      .map(([produto, qtd]) => {
+        const preco = precosProdutos[produto] || 0;
+        return {
+          produto,
+          preco,
+          quantidade: qtd,
+          total: preco * qtd
+        };
+      });
+
+    const totalGeral = vendasFiltradas.reduce((acc, item) => acc + item.total, 0);
+
+    const novaVenda = {
+      data: dataFormatada,
+      diaSemana,
+      vendas: vendasFiltradas,
+      totalGeral
+    };
+
+    const vendasSalvas = JSON.parse(localStorage.getItem("vendas") || "[]");
+    const atualizadas = [...vendasSalvas, novaVenda];
+    localStorage.setItem("vendas", JSON.stringify(atualizadas));
+    alert("Vendas salvas com sucesso no relatório! ✅");
+  };
+
+  const exportarTodasVendas = () => {
+    const vendas = JSON.parse(localStorage.getItem("vendas") || "[]");
+    if (!vendas.length) {
+      alert("Nenhuma venda para exportar.");
+      return;
+    }
+    // Gera uma planilha com todas as vendas detalhadas
+    let dados = [];
+    vendas.forEach(venda => {
+      venda.vendas.forEach(item => {
+        dados.push({
+          Data: venda.diaSemana ? `${venda.diaSemana} – ${venda.data}` : venda.data,
+          Produto: item.produto,
+          Preço: item.preco,
+          Quantidade: item.quantidade,
+          Total: item.total
+        });
+      });
+      // Linha de total do dia
+      dados.push({
+        Data: venda.diaSemana ? `${venda.diaSemana} – ${venda.data}` : venda.data,
+        Produto: "TOTAL DO DIA",
+        Preço: "",
+        Quantidade: "",
+        Total: venda.totalGeral
+      });
+    });
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Vendas");
+    XLSX.writeFile(wb, "vendas-loja.xlsx");
+  };
+
+  const exportarVendaIndividual = (venda) => {
+    let dados = venda.vendas.map(item => ({
+      Produto: item.produto,
+      Preço: item.preco,
+      Quantidade: item.quantidade,
+      Total: item.total
+    }));
+    // Linha de total do dia
+    dados.push({
+      Produto: "TOTAL DO DIA",
+      Preço: "",
+      Quantidade: "",
+      Total: venda.totalGeral
+    });
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Venda");
+    const nomeArquivo = `venda_${venda.data.replace(/\//g, "-")}.xlsx`;
+    XLSX.writeFile(wb, nomeArquivo);
+  };
+
+  const limparVendas = () => {
+    const confirmar = window.confirm("Tem certeza que deseja apagar todos os relatórios de vendas?");
+    if (confirmar) {
+      localStorage.removeItem("vendas");
+      alert("Todos os relatórios de vendas foram apagados! 🧼");
+      window.location.reload();
+    }
+  };
+
+  const exportarTodaProducao = () => {
+    const producao = JSON.parse(localStorage.getItem("producao") || "[]");
+    if (!producao.length) {
+      alert("Nenhum registro de produção para exportar.");
+      return;
+    }
+    const dados = producao.map(p => ({
+      Data: p.diaSemana ? `${p.diaSemana} – ${p.data}` : p.data,
+      "Total por Classe": JSON.stringify(p.totalPorClasse),
+      Itens: JSON.stringify(p.itens)
+    }));
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Produção");
+    XLSX.writeFile(wb, "producao-loja.xlsx");
+  };
+
+  const exportarProducaoIndividual = (registro) => {
+    const dados = registro.itens.map(item => ({
+      Produto: item.produto,
+      Quantidade: item.quantidade
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(dados);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Produção");
+
+    const nomeArquivo = `producao_${registro.data.replace(/\//g, "-")}.xlsx`;
+    XLSX.writeFile(wb, nomeArquivo);
+  };
+
+  const limparProducao = () => {
+    const confirmar = window.confirm("Tem certeza que deseja apagar todos os registros de produção?");
+    if (confirmar) {
+      localStorage.removeItem("producao");
+      alert("Todos os registros de produção foram apagados! 🧼");
+      window.location.reload();
+    }
+  };
+
+  const salvarProducao = () => {
+    const hoje = new Date();
+    const diasSemana = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+    const diaSemana = diasSemana[hoje.getDay()];
+    const dia = String(hoje.getDate()).padStart(2, '0');
+    const mes = String(hoje.getMonth() + 1).padStart(2, '0');
+    const ano = hoje.getFullYear();
+    const dataFormatada = `${dia}/${mes}/${ano}`;
+
+    // Filtra apenas itens com quantidade > 0
+    const itens = Object.entries(quantidadesProducao)
+      .filter(([produto, qtd]) => qtd > 0)
+      .map(([produto, qtd]) => ({ produto, quantidade: qtd }));
+
+    // Agrupa por "classe" (primeira palavra do produto, ou tudo maiúsculo até o primeiro espaço ou /)
+    const totalPorClasse = {};
+    itens.forEach(item => {
+      let classe = item.produto.split(" ")[0].toUpperCase();
+      if (classe.includes("/")) classe = classe.split("/")[0];
+      totalPorClasse[classe] = (totalPorClasse[classe] || 0) + item.quantidade;
+    });
+
+    const novoRegistro = {
+      data: dataFormatada,
+      diaSemana,
+      itens,
+      totalPorClasse
+    };
+
+    const producaoSalva = JSON.parse(localStorage.getItem("producao") || "[]");
+    const atualizadas = [...producaoSalva, novoRegistro];
+    localStorage.setItem("producao", JSON.stringify(atualizadas));
+    alert("Produção salva com sucesso no relatório! ✅");
+  };
 
   return (
     <div className="min-h-screen w-full bg-purple-50 flex flex-col items-center pt-4 px-2 pb-24">
@@ -94,6 +391,10 @@ export default function LojaApp() {
                 ))}
               </div>
             </div>
+
+            <Button onClick={salvarVendasNoRelatorio} className="mt-4 bg-green-600 text-white w-full">
+              Salvar Vendas no Relatório
+            </Button>
           </div>
         )}
 
@@ -116,20 +417,318 @@ export default function LojaApp() {
                 ))}
               </div>
             </div>
+
+            <Button onClick={salvarProducao} className="mt-4 bg-blue-600 text-white w-full">
+              Salvar Produção no Relatório
+            </Button>
           </div>
         )}
 
         {abaAtiva === "caixa" && (
           <div className="space-y-4">
             <div className="bg-white rounded-xl shadow p-4">
+              
               <div className="flex flex-col gap-3">
-                <Input placeholder="Dinheiro" type="text" defaultValue={formatarMoeda(caixa.dinheiro)} onBlur={(e) => handleValor(e, "dinheiro")} className="text-base p-3 rounded" />
-                <Input placeholder="PIX Inter" type="text" defaultValue={formatarMoeda(caixa.pixInter)} onBlur={(e) => handleValor(e, "pixInter")} className="text-base p-3 rounded" />
-                <Input placeholder="Cartão PagBank" type="text" defaultValue={formatarMoeda(caixa.cartaoPagBank)} onBlur={(e) => handleValor(e, "cartaoPagBank")} className="text-base p-3 rounded" />
-                <Input placeholder="PIX Santander" type="text" defaultValue={formatarMoeda(caixa.pixSantander)} onBlur={(e) => handleValor(e, "pixSantander")} className="text-base p-3 rounded" />
-                <Input placeholder="Cartão Santander" type="text" defaultValue={formatarMoeda(caixa.cartaoSantander)} onBlur={(e) => handleValor(e, "cartaoSantander")} className="text-base p-3 rounded" />
-                <div className="text-right font-bold text-green-700">Total: {formatarMoeda(totalCaixa)}</div>
-                <Button onClick={() => console.log("Exportar caixa")} className="mt-4 bg-purple-600 text-white w-full">Fechar o Caixa</Button>
+                <label className="text-sm text-gray-700">Dinheiro:</label>
+                <NumericFormat
+                  thousandSeparator="."
+                  decimalSeparator="," 
+                  prefix="R$ "
+                  allowNegative={false}
+                  value={caixa.dinheiro}
+                  onValueChange={(val) =>
+                    setCaixa(prev => ({ ...prev, dinheiro: val.floatValue || 0 }))
+                  }
+                  className="text-base p-3 rounded border border-gray-300"
+                />
+
+                <label className="text-sm text-gray-700">PIX Inter:</label>
+                <NumericFormat
+                  thousandSeparator="."
+                  decimalSeparator="," 
+                  prefix="R$ "
+                  allowNegative={false}
+                  value={caixa.pixInter}
+                  onValueChange={(val) =>
+                    setCaixa(prev => ({ ...prev, pixInter: val.floatValue || 0 }))
+                  }
+                  className="text-base p-3 rounded border border-gray-300"
+                />
+
+                <label className="text-sm text-gray-700">Cartão PagBank:</label>
+                <NumericFormat
+                  thousandSeparator="."
+                  decimalSeparator="," 
+                  prefix="R$ "
+                  allowNegative={false}
+                  value={caixa.cartaoPagBank}
+                  onValueChange={(val) =>
+                    setCaixa(prev => ({ ...prev, cartaoPagBank: val.floatValue || 0 }))
+                  }
+                  className="text-base p-3 rounded border border-gray-300"
+                />
+
+                <label className="text-sm text-gray-700">PIX Santander:</label>
+                <NumericFormat
+                  thousandSeparator="."
+                  decimalSeparator="," 
+                  prefix="R$ "
+                  allowNegative={false}
+                  value={caixa.pixSantander}
+                  onValueChange={(val) =>
+                    setCaixa(prev => ({ ...prev, pixSantander: val.floatValue || 0 }))
+                  }
+                  className="text-base p-3 rounded border border-gray-300"
+                />
+
+                <label className="text-sm text-gray-700">Cartão Santander:</label>
+                <NumericFormat
+                  thousandSeparator="."
+                  decimalSeparator="," 
+                  prefix="R$ "
+                  allowNegative={false}
+                  value={caixa.cartaoSantander}
+                  onValueChange={(val) =>
+                    setCaixa(prev => ({ ...prev, cartaoSantander: val.floatValue || 0 }))
+                  }
+                  className="text-base p-3 rounded border border-gray-300"
+                />
+
+                <div className="text-right font-bold text-green-700 mt-4">
+                  Total: {formatarMoeda(
+                    Number(caixa.dinheiro || 0) +
+                    Number(caixa.pixInter || 0) +
+                    Number(caixa.cartaoPagBank || 0) +
+                    Number(caixa.pixSantander || 0) +
+                    Number(caixa.cartaoSantander || 0)
+                  )}
+                </div>
+
+                <Button
+                  onClick={salvarFechamento}
+                  className="mt-4 bg-purple-600 text-white w-full"
+                >
+                  Fechar o Caixa
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {abaAtiva === "relatorios" && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl shadow p-4">
+              <h2 className="text-lg font-bold text-purple-700 mb-4">📅 Relatórios de Fechamento</h2>
+              
+              <Button
+                onClick={exportarTodosFechamentos}
+                className="mb-2 bg-green-600 text-white w-full"
+              >
+                ⬇️ Exportar Todos
+              </Button>
+
+              <Button
+                onClick={limparFechamentos}
+                className="mb-4 bg-red-600 text-white w-full"
+              >
+                🧹 Limpar Fechamentos
+              </Button>
+
+              <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+                {JSON.parse(localStorage.getItem("fechamentos") || "[]")
+                  .sort((a, b) => {
+                    // Inverte a ordem para mostrar o mais recente primeiro
+                    const [diaA, mesA, anoA] = a.data.split('/').map(Number);
+                    const [diaB, mesB, anoB] = b.data.split('/').map(Number);
+                    return new Date(anoB, mesB - 1, diaB) - new Date(anoA, mesA - 1, diaA);
+                  })
+                  .map((f, index) => {
+                    const estaAberto = detalhesAbertos[index];
+
+                    return (
+                      <div key={index} className="border rounded p-3 shadow-sm bg-gray-50">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">
+                              {f.diaSemana ? `${f.diaSemana} – ${f.data}` : f.data}
+                            </p>
+                            <p className="text-sm text-green-700 font-bold">Total: R$ {f.total.toFixed(2).replace('.', ',')}</p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                setDetalhesAbertos(prev => ({ ...prev, [index]: !prev[index] }))
+                              }
+                              className="bg-purple-200 text-purple-800 border border-purple-400"
+                            >
+                              {estaAberto ? "Fechar" : "Detalhes"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => exportarFechamentoIndividual(f)}
+                              className="bg-green-200 text-green-800 border border-green-400"
+                            >
+                              Exportar
+                            </Button>
+                          </div>
+                        </div>
+
+                        {estaAberto && (
+                          <div className="mt-2 text-sm text-gray-700 space-y-1 pl-2 pt-2 border-t border-purple-100">
+                            <p>Dinheiro: R$ {Number(f.valores.dinheiro || 0).toFixed(2).replace('.', ',')}</p>
+                            <p>PIX Inter: R$ {Number(f.valores.pixInter || 0).toFixed(2).replace('.', ',')}</p>
+                            <p>Cartão PagBank: R$ {Number(f.valores.cartaoPagBank || 0).toFixed(2).replace('.', ',')}</p>
+                            <p>PIX Santander: R$ {Number(f.valores.pixSantander || 0).toFixed(2).replace('.', ',')}</p>
+                            <p>Cartão Santander: R$ {Number(f.valores.cartaoSantander || 0).toFixed(2).replace('.', ',')}</p>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow p-4">
+              <h2 className="text-lg font-bold text-purple-700 mt-6">🛍️ Relatórios de Vendas</h2>
+              <Button
+                onClick={exportarTodasVendas}
+                className="mb-2 bg-green-600 text-white w-full"
+              >
+                ⬇️ Exportar Todas as Vendas
+              </Button>
+              <Button
+                onClick={limparVendas}
+                className="mb-4 bg-red-600 text-white w-full"
+              >
+                🧼 Limpar Vendas
+              </Button>
+              <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+                {JSON.parse(localStorage.getItem("vendas") || "[]")
+                  .sort((a, b) => {
+                    const [diaA, mesA, anoA] = a.data.split('/').map(Number);
+                    const [diaB, mesB, anoB] = b.data.split('/').map(Number);
+                    return new Date(anoB, mesB - 1, diaB) - new Date(anoA, mesA - 1, diaA);
+                  })
+                  .map((venda, index) => {
+                    const estaAberto = detalhesAbertos[index];
+                    return (
+                      <div key={index} className="border rounded p-3 shadow-sm bg-gray-50">
+                        <div className="flex justify-between items-center mb-2">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">
+                              {venda.diaSemana} – {venda.data}
+                            </p>
+                            <p className="text-sm text-green-700 font-bold">
+                              Total: R$ {venda.totalGeral.toFixed(2).replace('.', ',')}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => setDetalhesAbertos(prev => ({ ...prev, [index]: !prev[index] }))
+                              }
+                              className="bg-purple-200 text-purple-800 border border-purple-400"
+                            >
+                              {estaAberto ? "Fechar" : "Detalhes"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => exportarVendaIndividual(venda)}
+                              className="bg-green-200 text-green-800 border border-green-400"
+                            >
+                              Exportar
+                            </Button>
+                          </div>
+                        </div>
+
+                        {estaAberto && (
+                          <div className="mt-2 text-sm text-gray-700 space-y-1 pl-2 pt-2 border-t border-purple-100">
+                            {venda.vendas.map((item, i) => (
+                              <div key={i} className="flex justify-between">
+                                <span>
+                                  {item.produto} ({item.quantidade}x R$ {item.preco.toFixed(2).replace('.', ',')})
+                                </span>
+                                <span>R$ {item.total.toFixed(2).replace('.', ',')}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow p-4">
+              <h2 className="text-lg font-bold text-purple-700 mt-6">🏭 Relatórios de Produção</h2>
+              <Button
+                onClick={exportarTodaProducao}
+                className="mb-2 bg-green-600 text-white w-full"
+              >
+                ⬇️ Exportar Toda a Produção
+              </Button>
+              <Button
+                onClick={limparProducao}
+                className="mb-4 bg-red-600 text-white w-full"
+              >
+                🧼 Limpar Produção
+              </Button>
+              <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
+                {JSON.parse(localStorage.getItem("producao") || "[]")
+                  .sort((a, b) => {
+                    const [diaA, mesA, anoA] = a.data.split('/').map(Number);
+                    const [diaB, mesB, anoB] = b.data.split('/').map(Number);
+                    return new Date(anoB, mesB - 1, diaB) - new Date(anoA, mesA - 1, diaA);
+                  })
+                  .map((registro, index) => {
+                    const estaAberto = detalhesAbertos[`producao-${index}`];
+                    return (
+                      <div key={index} className="border rounded p-3 shadow-sm bg-gray-50">
+                        <div className="flex justify-between items-center mb-2">
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">
+                              {registro.diaSemana} – {registro.data}
+                            </p>
+                            <p className="text-sm text-green-700 font-bold">
+                              Total por Classe:
+                              {Object.entries(registro.totalPorClasse || {}).map(([classe, total]) => (
+                                <span key={classe}> {classe}: {total} |</span>
+                              ))}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={() => setDetalhesAbertos(prev => ({ ...prev, [`producao-${index}`]: !prev[`producao-${index}`] }))
+                              }
+                              className="bg-purple-200 text-purple-800 border border-purple-400"
+                            >
+                              {estaAberto ? "Fechar" : "Detalhes"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => exportarProducaoIndividual(registro)}
+                              className="bg-green-200 text-green-800 border border-green-400"
+                            >
+                              Exportar
+                            </Button>
+                          </div>
+                        </div>
+
+                        {estaAberto && (
+                          <div className="mt-2 text-sm text-gray-700 space-y-1 pl-2 pt-2 border-t border-purple-100">
+                            {registro.itens.map((item, i) => (
+                              <div key={i} className="flex justify-between">
+                                <span>{item.produto}</span>
+                                <span>{item.quantidade}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
               </div>
             </div>
           </div>
@@ -150,6 +749,11 @@ export default function LojaApp() {
             <ClipboardList className="h-5 w-5" />
             <span className="text-xs">Produção</span>
           </Button>
+          <Button onClick={() => setAbaAtiva("relatorios")} className={`flex flex-col items-center justify-center flex-1 mx-1 ${abaAtiva === "relatorios" ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-700"}`}>
+            <span role="img" aria-label="Relatórios">📊</span>
+            <span className="text-xs">Relatórios</span>
+          </Button>
+
         </div>
       </div>
     </div>

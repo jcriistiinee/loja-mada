@@ -1,7 +1,8 @@
+import React from "react";
 import { useState, useEffect } from "react";
-import { Input } from "./components/ui/input";
-import { Button } from "./components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import { Card, CardContent } from "./ui/card";
 
 const produtosComPreco = {
   "Geladão": 5,
@@ -50,7 +51,15 @@ export default function Vendas() {
     const hoje = new Date();
     const opcoesData = { year: "numeric", month: "2-digit", day: "2-digit" };
     const dia = hoje.toLocaleDateString("pt-BR", opcoesData);
-    const diasSemana = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+    const diasSemana = [
+      "domingo",
+      "segunda-feira",
+      "terça-feira",
+      "quarta-feira",
+      "quinta-feira",
+      "sexta-feira",
+      "sábado"
+    ];
     setDataAtual(dia);
     setDiaSemana(diasSemana[hoje.getDay()]);
 
@@ -78,6 +87,11 @@ export default function Vendas() {
     setQuantidades({});
   }
 
+  function limparPlanilha() {
+    setQuantidades({});
+    localStorage.removeItem("produtos_adicionados");
+  }
+
   return (
     <div className="p-4 space-y-4">
       <h2 className="text-xl font-bold">Vendas do dia - {dataAtual} ({diaSemana})</h2>
@@ -88,7 +102,9 @@ export default function Vendas() {
             <CardContent className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <div className="flex flex-col">
                 <span className="font-medium">{produto}</span>
-                <span className="text-sm text-muted-foreground">R$ {produtosComPreco[produto].toFixed(2)}</span>
+                <span className="text-sm text-muted-foreground">
+                  R$ {produtosComPreco[produto].toFixed(2)}
+                </span>
               </div>
               <Input
                 type="number"
@@ -102,7 +118,14 @@ export default function Vendas() {
         ))}
       </div>
 
-      <Button onClick={salvarVendas} className="w-full">Salvar Vendas</Button>
+      <div className="flex gap-2">
+        <Button onClick={salvarVendas} className="w-full">
+          Salvar Vendas
+        </Button>
+        <Button onClick={limparPlanilha} variant="outline" className="w-full">
+          Limpar Planilha
+        </Button>
+      </div>
     </div>
   );
 }
