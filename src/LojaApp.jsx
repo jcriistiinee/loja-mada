@@ -261,8 +261,8 @@ export default function LojaApp() {
               </div>
             </div>
 
-            <Button onClick={salvarVendasNoRelatorio} className="mt-4 bg-green-600 text-white w-full">
-              Salvar Vendas no Relatório
+            <Button onClick={salvarVendasNoRelatorio} className="mt-4 bg-purple-600 text-white w-full">
+              Registrar Vendas
             </Button>
           </div>
         )}
@@ -287,8 +287,16 @@ export default function LojaApp() {
               </div>
             </div>
 
-            <Button onClick={() => salvarProducao(quantidadesProducao)} className="mt-4 bg-blue-600 text-white w-full">
-              Salvar Produção no Relatório
+            <Button
+              onClick={() => {
+                salvarProducao(quantidadesProducao);
+                const resetQuantidadesProducao = {};
+                produtosProducao.forEach(p => (resetQuantidadesProducao[p] = 0));
+                setQuantidadesProducao(resetQuantidadesProducao);
+              }}
+              className="mt-4 bg-purple-600 text-white w-full"
+            >
+              Registrar Produção
             </Button>
           </div>
         )}

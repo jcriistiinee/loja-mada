@@ -31,7 +31,13 @@ export const exportarTodosFechamentos = () => {
       "Cartão PagBank (R$)": `R$ ${parseFloat(f.valores?.cartaoPagBank || 0).toFixed(2)}`,
       "PIX Santander (R$)": `R$ ${parseFloat(f.valores?.pixSantander || 0).toFixed(2)}`,
       "Cartão Santander (R$)": `R$ ${parseFloat(f.valores?.cartaoSantander || 0).toFixed(2)}`,
-      "Total (R$)": `R$ ${parseFloat(f.total || 0).toFixed(2)}`
+      "Total (R$)": `R$ ${(
+        Number(f.valores?.dinheiro || 0) +
+        Number(f.valores?.pixInter || 0) +
+        Number(f.valores?.cartaoPagBank || 0) +
+        Number(f.valores?.pixSantander || 0) +
+        Number(f.valores?.cartaoSantander || 0)
+      ).toFixed(2).replace('.', ',')}`
     };
   });
 
@@ -48,72 +54,72 @@ export const exportarTodosFechamentos = () => {
 };
 
 // 📄 EXPORTAR FECHAMENTO INDIVIDUAL
-export const exportarFechamentoIndividual = (fechamentoSalvo) => {
-  let diaSemana = fechamentoSalvo.diaSemana;
-  let data = fechamentoSalvo.data;
-  let valores = fechamentoSalvo.valores || fechamentoSalvo.fechamento;
+export const exportarFechamentoIndividual = (fechamento) => {
+  const valores = fechamento.valores || {};
+  const total = (
+    Number(valores.dinheiro || 0) +
+    Number(valores.pixInter || 0) +
+    Number(valores.cartaoPagBank || 0) +
+    Number(valores.pixSantander || 0) +
+    Number(valores.cartaoSantander || 0)
+  ).toFixed(2).replace('.', ',');
 
-  if (fechamentoSalvo.data && fechamentoSalvo.data.includes("|")) {
-    [diaSemana, data] = fechamentoSalvo.data.split("|").map(p => p.trim());
-  }
+  const dadosPlanilha = [{
+    "Dia da Semana": fechamento.diaSemana || "",
+    "Data": fechamento.data || "",
+    "Dinheiro (R$)": `R$ ${Number(valores.dinheiro || 0).toFixed(2).replace('.', ',')}`,
+    "PIX Inter (R$)": `R$ ${Number(valores.pixInter || 0).toFixed(2).replace('.', ',')}`,
+    "Cartão PagBank (R$)": `R$ ${Number(valores.cartaoPagBank || 0).toFixed(2).replace('.', ',')}`,
+    "PIX Santander (R$)": `R$ ${Number(valores.pixSantander || 0).toFixed(2).replace('.', ',')}`,
+    "Cartão Santander (R$)": `R$ ${Number(valores.cartaoSantander || 0).toFixed(2).replace('.', ',')}`,
+    "Total (R$)": `R$ ${total}`,
+  }];
 
-  const fechamentoFormatado = {
-    "Dia da Semana": diaSemana,
-    "Data": data,
-    "Dinheiro (R$)": `R$ ${parseFloat(valores.dinheiro).toFixed(2)}`,
-    "PIX Inter (R$)": `R$ ${parseFloat(valores.pixInter).toFixed(2)}`,
-    "Cartão PagBank (R$)": `R$ ${parseFloat(valores.cartaoPagBank).toFixed(2)}`,
-    "PIX Santander (R$)": `R$ ${parseFloat(valores.pixSantander).toFixed(2)}`,
-    "Cartão Santander (R$)": `R$ ${parseFloat(valores.cartaoSantander).toFixed(2)}`,
-    "Total (R$)": `R$ ${parseFloat(valores.total).toFixed(2)}`
-  };
-
-  const worksheet = XLSX.utils.json_to_sheet([fechamentoFormatado]);
+  const worksheet = XLSX.utils.json_to_sheet(dadosPlanilha);
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Fechamento");
-  const agora = new Date();
-  const dataFormatada = agora.toLocaleDateString("pt-BR").replace(/\//g, "-");
-  const horaFormatada = `${agora.getHours()}h${String(agora.getMinutes()).padStart(2, "0") }min`;
-  const nomeArquivo = `relatorio_${dataFormatada}_${horaFormatada}.xlsx`;
+
+  const nomeArquivo = `fechamento_${(fechamento.data || '').replace(/\//g, "-")}.xlsx`;
   XLSX.writeFile(workbook, nomeArquivo);
 };
 
 // 🛍️ EXPORTAR TODAS AS VENDAS
 export const exportarTodasVendas = () => {
   const vendas = JSON.parse(localStorage.getItem("vendas") || "[]");
-  if (!vendas.length) return alert("Nenhuma venda para exportar.");
+  if (!vendas.length) {
+    alert("Nenhuma venda para exportar.");
+    return;
+  }
 
-  const dados = [];
-  vendas.forEach(venda => {
-    venda.vendas.forEach(item => {
+  let dados = [];
+
+  vendas.forEach((venda) => {
+    // Adiciona cada item da venda
+    venda.vendas.forEach((item) => {
       dados.push({
-        "Dia da Semana": venda.diaSemana || "",
-        "Data": venda.data || "",
-        Categoria: categorizarProduto(item.produto),
         Produto: item.produto,
-        Preço: `R$ ${parseFloat(item.preco).toFixed(2)}`,
+        Preço: `R$ ${parseFloat(item.preco).toFixed(2).replace(".", ",")}`,
         Quantidade: item.quantidade,
-        Total: `R$ ${parseFloat(item.total).toFixed(2)}`,
-        "Total do Dia (R$)": ""
+        Total: `R$ ${parseFloat(item.total).toFixed(2).replace(".", ",")}`
       });
     });
+
     // Linha de total do dia
     dados.push({
-      "Dia da Semana": "",
-      "Data": "",
-      Categoria: "",
-      Produto: "",
+      Produto: `🟣 Total do Dia (${venda.diaSemana} – ${venda.data})`,
       Preço: "",
       Quantidade: "",
-      Total: "",
-      "Total do Dia (R$)": `R$ ${parseFloat(venda.totalGeral || 0).toFixed(2)}`
+      Total: `R$ ${parseFloat(venda.totalGeral).toFixed(2).replace(".", ",")}`
     });
+
+    // Linha em branco entre os dias
+    dados.push({});
   });
 
   const ws = XLSX.utils.json_to_sheet(dados);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Vendas");
-  XLSX.writeFile(wb, gerarNomeArquivo("vendas"));
+  XLSX.writeFile(wb, "relatorio-vendas.xlsx");
 };
 
 // 📄 EXPORTAR VENDA INDIVIDUAL
