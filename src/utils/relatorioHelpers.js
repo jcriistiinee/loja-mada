@@ -96,6 +96,7 @@ export const exportarTodasVendas = () => {
   vendas.forEach((venda) => {
     // Adiciona cada item da venda
     venda.vendas.forEach((item) => {
+      console.log("Produto:", item.produto, "| Preço:", item.preco);
       dados.push({
         Produto: item.produto,
         Preço: `R$ ${parseFloat(item.preco).toFixed(2).replace(".", ",")}`,

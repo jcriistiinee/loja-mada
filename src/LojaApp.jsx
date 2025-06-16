@@ -39,8 +39,8 @@ export default function LojaApp() {
     "Açaí&Sorvete 500ml", "Açaí&Sorvete 700ml", "Açaí&Sorvete 300ml IFOOD", "Açaí&Sorvete 500ml IFOOD",
     "Açaí&Sorvete 700ml IFOOD", "Empadão", "Empadão CARNE SECA/ outros", "Pão de Queijo", "Torta Salgada",
     "Sanduíche Natural", "Coca/Refri 200ml", "Guaraviton", "Água com/sem gás 500ml", "Tortinha/bolo de pote",
-    "Palha Italiana", "Pudim Copo", "Arroz doce Copo", "Creme de Avelã", "Adicional", "Picole 2",
-    "Picolé 3", "Picolé 4", "Paleta ", "Pudim Forma", "Torta /Empadão grande",
+    "Palha Italiana", "Pudim Copo", "Arroz doce Copo", "Creme de Avelã", "Adicional", "Picolé 2",
+    "Picolé 3", "Picolé 4", "Paleta", "Pudim Forma", "Torta /Empadão grande",
     "Bolo de travessa", "Rabanada Recheada", "Rabanada Tradicional", "Salgado"
   ];
 
