@@ -32,6 +32,7 @@ export default function LojaApp() {
     pixSantander: "",
     cartaoSantander: "",
   });
+  const [abaRelatorioInterna, setAbaRelatorioInterna] = useState("fechamentos");
 
   const produtos = [
     "Geladão", "Geladão IFOOD", "Açaí&Sorvete 200ml", "Açaí&Sorvete 300ml", "Açaí&Sorvete 400ml",
@@ -353,7 +354,12 @@ export default function LojaApp() {
         {abaAtiva === "relatorios" && (
           <div className="space-y-4">
             <div className="bg-white rounded-xl shadow p-4">
-              <Tabs defaultValue="fechamentos" className="w-full">
+              <Tabs
+                defaultValue="fechamentos"
+                abaAtiva={abaRelatorioInterna}
+                setAbaAtiva={setAbaRelatorioInterna}
+                className="w-full"
+              >
                 <TabsList className="grid w-full grid-cols-3 mb-4">
                   <TabsTrigger value="fechamentos">Fechamentos</TabsTrigger>
                   <TabsTrigger value="vendas">Vendas</TabsTrigger>
@@ -435,10 +441,17 @@ export default function LojaApp() {
 
                 <TabsContent value="producao">
                   <h2 className="text-lg font-bold text-purple-700 mb-2">🏭 Relatórios de Produção</h2>
-                  <Button onClick={exportarTodaProducao} className="mb-2 bg-green-600 text-white w-full">⬇️ Exportar Toda a Produção</Button>
-                  <Button onClick={limparProducao} className="mb-4 bg-red-600 text-white w-full">🧼 Limpar Produção</Button>
+
+                  <Button onClick={exportarTodaProducao} className="mb-2 bg-green-600 text-white w-full">
+                    ⬇️ Exportar Toda Produção
+                  </Button>
+
+                  <Button onClick={limparProducao} className="mb-4 bg-red-600 text-white w-full">
+                    🧼 Limpar Produção
+                  </Button>
+
                   <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto">
-                    {JSON.parse(localStorage.getItem("producao") || "[]")
+                    {(JSON.parse(localStorage.getItem("producao") || "[]") || [])
                       .sort((a, b) => new Date(b.data.split('/').reverse()) - new Date(a.data.split('/').reverse()))
                       .map((registro, index) => {
                         const estaAberto = detalhesAbertos[`producao-${index}`];
@@ -447,11 +460,33 @@ export default function LojaApp() {
                             <div className="flex justify-between items-center mb-2">
                               <div>
                                 <p className="text-sm font-medium text-gray-700">{registro.diaSemana} – {registro.data}</p>
-                                <p className="text-sm text-green-700 font-bold">Total por Classe: {Object.entries(registro.totalPorClasse || {}).map(([classe, total]) => (<span key={classe}> {classe}: {total} |</span>))}</p>
+                                <p className="text-sm text-green-700 font-bold">
+                                  Total por Classe:
+                                  {Object.entries(registro.totalPorClasse || {}).map(([classe, total]) => (
+                                    <span key={classe}> {classe}: {total} |</span>
+                                  ))}
+                                </p>
                               </div>
                               <div className="flex gap-2">
-                                <Button size="sm" onClick={() => setDetalhesAbertos(prev => ({ ...prev, [`producao-${index}`]: !prev[`producao-${index}`] }))} className="bg-purple-200 text-purple-800 border border-purple-400">{estaAberto ? "Fechar" : "Detalhes"}</Button>
-                                <Button size="sm" onClick={() => exportarProducaoIndividual(registro)} className="bg-green-200 text-green-800 border border-green-400">Exportar</Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() =>
+                                    setDetalhesAbertos(prev => ({
+                                      ...prev,
+                                      [`producao-${index}`]: !prev[`producao-${index}`],
+                                    }))
+                                  }
+                                  className="bg-purple-200 text-purple-800 border border-purple-400"
+                                >
+                                  {estaAberto ? "Fechar" : "Detalhes"}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => exportarProducaoIndividual(registro)}
+                                  className="bg-green-200 text-green-800 border border-green-400"
+                                >
+                                  Exportar
+                                </Button>
                               </div>
                             </div>
                             {estaAberto && (

@@ -49,7 +49,7 @@ export const exportarTodosFechamentos = () => {
   const agora = new Date();
   const dataFormatada = agora.toLocaleDateString("pt-BR").replace(/\//g, "-");
   const horaFormatada = `${agora.getHours()}h${String(agora.getMinutes()).padStart(2, "0") }min`;
-  const nomeArquivo = `relatorio_${dataFormatada}_${horaFormatada}.xlsx`;
+  const nomeArquivo = `MadaChefinhas – Todos os Fechamentos.xlsx`;
   XLSX.writeFile(wb, nomeArquivo);
 };
 
@@ -79,7 +79,7 @@ export const exportarFechamentoIndividual = (fechamento) => {
   const workbook = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(workbook, worksheet, "Fechamento");
 
-  const nomeArquivo = `fechamento_${(fechamento.data || '').replace(/\//g, "-")}.xlsx`;
+  const nomeArquivo = `MadaChefinhas – Caixa ${fechamento.data.replaceAll("/", "-")}.xlsx`;
   XLSX.writeFile(workbook, nomeArquivo);
 };
 
@@ -119,26 +119,32 @@ export const exportarTodasVendas = () => {
   const ws = XLSX.utils.json_to_sheet(dados);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Vendas");
-  XLSX.writeFile(wb, "relatorio-vendas.xlsx");
+  const agora = new Date();
+  const dataAtual = agora.toLocaleDateString("pt-BR");
+  const nomeArquivo = `MadaChefinhas – Vendas ${dataAtual.replaceAll("/", "-")}.xlsx`;
+  XLSX.writeFile(wb, nomeArquivo);
 };
 
 // 📄 EXPORTAR VENDA INDIVIDUAL
 export const exportarVendaIndividual = (venda) => {
+  if (!venda || !venda.vendas || !venda.data) {
+    alert("Venda inválida.");
+    return;
+  }
+
   const dados = venda.vendas.map(item => ({
     Categoria: categorizarProduto(item.produto),
     Produto: item.produto,
-    Preço: `R$ ${parseFloat(item.preco).toFixed(2)}`,
+    Preço: `R$ ${parseFloat(item.preco).toFixed(2).replace(".", ",")}`,
     Quantidade: item.quantidade,
-    Total: `R$ ${parseFloat(item.total).toFixed(2)}`
+    Total: `R$ ${parseFloat(item.total).toFixed(2).replace(".", ",")}`
   }));
 
   const ws = XLSX.utils.json_to_sheet(dados);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Venda");
-  const agora = new Date();
-  const dataFormatada = agora.toLocaleDateString("pt-BR").replace(/\//g, "-");
-  const horaFormatada = `${agora.getHours()}h${String(agora.getMinutes()).padStart(2, "0") }min`;
-  const nomeArquivo = `relatorio_${dataFormatada}_${horaFormatada}.xlsx`;
+
+  const nomeArquivo = `MadaChefinhas – Vendas ${venda.data.replaceAll("/", "-")}.xlsx`;
   XLSX.writeFile(wb, nomeArquivo);
 };
 
@@ -160,7 +166,10 @@ export const exportarTodaProducao = () => {
   const ws = XLSX.utils.json_to_sheet(dados);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Produção");
-  XLSX.writeFile(wb, gerarNomeArquivo("producao"));
+  const agora = new Date();
+  const dataAtual = agora.toLocaleDateString("pt-BR");
+  const nomeArquivo = `MadaChefinhas – Produção ${dataAtual.replaceAll("/", "-")}.xlsx`;
+  XLSX.writeFile(wb, nomeArquivo);
 };
 
 // 📄 EXPORTAR PRODUÇÃO INDIVIDUAL
@@ -177,7 +186,7 @@ export const exportarProducaoIndividual = (registro) => {
   const agora = new Date();
   const dataFormatada = agora.toLocaleDateString("pt-BR").replace(/\//g, "-");
   const horaFormatada = `${agora.getHours()}h${String(agora.getMinutes()).padStart(2, "0") }min`;
-  const nomeArquivo = `relatorio_${dataFormatada}_${horaFormatada}.xlsx`;
+  const nomeArquivo = `MadaChefinhas – Produção ${registro.data.replaceAll("/", "-")}.xlsx`;
   XLSX.writeFile(wb, nomeArquivo);
 };
 
@@ -223,6 +232,49 @@ export const exportarTesteColunas = () => {
   XLSX.writeFile(wb, "teste-colunas.xlsx");
 };
 
+// 🧾 EXPORTAR TODOS OS RELATÓRIOS DE VENDAS
+export const exportarTodosRelatoriosDeVendas = () => {
+  const vendas = JSON.parse(localStorage.getItem("vendas") || "[]");
+
+  if (!vendas.length) {
+    alert("Nenhuma venda para exportar.");
+    return;
+  }
+
+  let dados = [];
+  vendas.forEach((venda) => {
+    (venda.vendas || []).forEach((item) => {
+      dados.push({
+        Data: venda.diaSemana ? `${venda.diaSemana} – ${venda.data}` : venda.data,
+        Produto: item.produto,
+        Quantidade: item.quantidade,
+        Preço: `R$ ${parseFloat(item.preco).toFixed(2).replace('.', ',')}`,
+        Total: `R$ ${parseFloat(item.total).toFixed(2).replace('.', ',')}`
+      });
+    });
+    // Linha de total do dia
+    dados.push({
+      Data: `🟣 Total do Dia (${venda.diaSemana} – ${venda.data})`,
+      Produto: "",
+      Quantidade: "",
+      Preço: "",
+      Total: `R$ ${parseFloat(venda.totalGeral).toFixed(2).replace('.', ',')}`
+    });
+    // Linha em branco
+    dados.push({});
+  });
+
+  const ws = XLSX.utils.json_to_sheet(dados);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Vendas");
+
+  // Novo nome do arquivo:
+  const agora = new Date();
+  const dataAtual = agora.toLocaleDateString("pt-BR");
+  const nomeArquivo = `MadaChefinhas – Vendas ${dataAtual.replaceAll("/", "-")}.xlsx`;
+  XLSX.writeFile(wb, nomeArquivo);
+};
+
 // Exemplo de uso padronizado para map de produção agrupando categoria
 // const itens = Object.entries(quantidadesProducao)
 //   .filter(([produto, qtd]) => qtd > 0)
@@ -230,4 +282,3 @@ export const exportarTesteColunas = () => {
 //     produto,
 //     quantidade: qtd,
 //     categoria: categorizarProduto(produto)
-//   }));

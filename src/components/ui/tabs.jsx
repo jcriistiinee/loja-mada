@@ -39,8 +39,8 @@ export function TabsTrigger({ value, children }) {
   );
 }
 
-export function TabsContent({ value, children }) {
+export function TabsContent({ value, children, className = "" }) {
   const { abaAtiva } = React.useContext(TabsContext);
   if (abaAtiva !== value) return null;
-  return <div>{children}</div>;
+  return <div className={className}>{children}</div>;
 }
