@@ -262,9 +262,9 @@ export default function LojaApp() {
               </div>
             </div>
 
-            <Button onClick={salvarVendasNoRelatorio} className="mt-4 bg-purple-600 text-white w-full">
-              Registrar Vendas
-            </Button>
+            <div className="sticky bottom-0 bg-white p-4 shadow-md z-10">
+              <Button onClick={salvarVendasNoRelatorio} className="w-full bg-purple-600 text-white">Registrar Vendas</Button>
+            </div>
           </div>
         )}
 
@@ -288,17 +288,14 @@ export default function LojaApp() {
               </div>
             </div>
 
-            <Button
-              onClick={() => {
+            <div className="sticky bottom-0 bg-white p-4 shadow-md z-10">
+              <Button onClick={() => {
                 salvarProducao(quantidadesProducao);
                 const resetQuantidadesProducao = {};
                 produtosProducao.forEach(p => (resetQuantidadesProducao[p] = 0));
                 setQuantidadesProducao(resetQuantidadesProducao);
-              }}
-              className="mt-4 bg-purple-600 text-white w-full"
-            >
-              Registrar Produção
-            </Button>
+              }} className="w-full bg-purple-600 text-white">Registrar Produção</Button>
+            </div>
           </div>
         )}
 
@@ -310,9 +307,9 @@ export default function LojaApp() {
                 {[ 
                   { label: "Dinheiro", campo: "dinheiro" },
                   { label: "PIX Inter", campo: "pixInter" },
-                  { label: "Cartão PagBank", campo: "cartaoPagBank" },
+                  { label: "Maquininha PagBank", campo: "cartaoPagBank" },
                   { label: "PIX Santander", campo: "pixSantander" },
-                  { label: "Cartão Santander", campo: "cartaoSantander" }
+                  { label: "Maquininha Santander", campo: "cartaoSantander" }
                 ].map(({ label, campo }) => (
                   <div key={campo} className="flex items-center gap-2">
                     <label className="text-sm text-gray-700 w-32">{label}:</label>
